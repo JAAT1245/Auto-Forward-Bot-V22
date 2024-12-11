@@ -39,10 +39,10 @@ class Translation(object):
   
   ABOUT_TXT = """<b>╭──────❰ 🤖 Bot Details ❱──────〄
 │ 
-│ 🤖 Mʏ Nᴀᴍᴇ : <a href=https://t.me/devganbot>Dev Gagan Botᴛ</a>
-│ 👨‍💻 ᴅᴇᴠᴘʟᴏᴇʀ : <a href=https://t.me/dev_gagan>Team SPY</a>
-│ 🤖 ᴜᴘᴅᴀᴛᴇ  : <a href=https://t.me/dev_gagan>devgagan</a>
-│ 📡 ʜᴏsᴛ ᴏɴ : <a href=https://devgagan.in/>Dev Gagan Host</a>
+│ 🤖 Mʏ Nᴀᴍᴇ : <a href=https://t.me/free_course2_bot>CR CHOUDHARY Botᴛ</a>
+│ 👨‍💻 ᴅᴇᴠᴘʟᴏᴇʀ CR CHOUDHARY ❤️: <a href=https://t.me/free_course2_bot>Team CR CHOUDHARY</a>
+│ 🤖 ᴜᴘᴅᴀᴛᴇ  : <a href=https://t.me/TARGETALLCOURSE>COURSES HUB</a>
+│ 📡 ʜᴏsᴛ ᴏɴ : <a href=https://youtube.com/@bgm_total_movie?feature=shared/>CR CHOUDHARY Host</a>
 │ 🗣️ ʟᴀɴɢᴜᴀɢᴇ  : ᴘʏᴛʜᴏɴ 3 
 {python_version}
 │ 📚 ʟɪʙʀᴀʀʏ  : ᴘʏʀᴏɢʀᴀᴍ  
