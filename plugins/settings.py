@@ -1,9 +1,16 @@
-import asyncio 
+import asyncio
+import os
+import logging
+import json
+from datetime import datetime
 from database import db
 from translation import Translation
 from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+from telethon.sync import TelegramClient
+from telethon.errors import SessionPasswordNeededError, FloodWaitError
 from .test import get_configs, update_configs, CLIENT, parse_buttons
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
 
 CLIENT = CLIENT()
 
@@ -43,21 +50,79 @@ async def settings_query(bot, query):
        "<b><u>My Bots</b></u>\n\n<b>You can manage your bots in here</b>",
        reply_markup=InlineKeyboardMarkup(buttons))
   
-  elif type=="addbot":
-     await query.message.delete()
-     bot = await CLIENT.add_bot(bot, query)
-     if bot != True: return
-     await query.message.reply_text(
-        "<b>bot token successfully added to db</b>",
-        reply_markup=InlineKeyboardMarkup(buttons))
+  elif type == "addbot":
+    await query.message.delete()
+    try:
+        instruction = await CLIENT.send_message(
+            user_id,
+            "<b>⚙ Add a Bot:</b>\n\nPlease send the token of your bot. You can get this token from @BotFather.\n\nTo cancel the process, type <code>/cancel</code>."
+        )
+        bot_token = await CLIENT.listen(chat_id=user_id, timeout=300)
+        if bot_token.text == "/cancel":
+            await instruction.delete()
+            await bot_token.delete()
+            return await CLIENT.send_message(user_id, "<b>Process canceled!</b>")
+        bot = await CLIENT.add_bot(bot_token.text)
+        if bot is not True:
+            return await CLIENT.send_message(user_id, "<b>Invalid bot token. Please try again.</b>")
+        await CLIENT.send_message(user_id, "<b>✅ Bot added successfully!</b>")
+    except asyncio.exceptions.TimeoutError:
+        await CLIENT.send_message(user_id, "<b>⏰ Timeout! Process automatically canceled.</b>")
   
-  elif type=="adduserbot":
-     await query.message.delete()
-     user = await CLIENT.add_session(bot, query)
-     if user != True: return
-     await query.message.reply_text(
-        "<b>session successfully added to db</b>",
-        reply_markup=InlineKeyboardMarkup(buttons))
+  elif type == "adduserbot":
+    await query.message.delete()
+    try:
+        # Step 1: Ask for phone number
+        instruction = await CLIENT.send_message(
+            user_id,
+            "<b>⚙ Add a Userbot:</b>\n\nPlease provide your phone number (with country code, e.g., +1234567890).\n\nTo cancel, type <code>/cancel</code>."
+        )
+        phone_number = await CLIENT.listen(chat_id=user_id, timeout=300)
+        if phone_number.text == "/cancel":
+            await instruction.delete()
+            return await CLIENT.send_message(user_id, "<b>Process canceled!</b>")
+        
+        # Step 2: Initialize the client
+        session_name = f"userbot_{phone_number.text}"
+        client = TelegramClient(session_name, API_ID, API_HASH)
+        
+        await client.connect()
+        
+        # Step 3: Send code and ask for verification
+        try:
+            await client.send_code_request(phone_number.text)
+            await CLIENT.send_message(
+                user_id,
+                "<b>Verification:</b>\n\nPlease enter the code you received on your Telegram account."
+            )
+            code = await CLIENT.listen(chat_id=user_id, timeout=300)
+            if code.text == "/cancel":
+                await client.disconnect()
+                return await CLIENT.send_message(user_id, "<b>Process canceled!</b>")
+            
+            # Step 4: Complete login
+            await client.sign_in(phone_number.text, code.text)
+        except SessionPasswordNeededError:
+            # If 2FA is enabled, ask for password
+            await CLIENT.send_message(
+                user_id,
+                "<b>Two-Step Verification:</b>\n\nYour account is protected with a password. Please enter your password."
+            )
+            password = await CLIENT.listen(chat_id=user_id, timeout=300)
+            if password.text == "/cancel":
+                await client.disconnect()
+                return await CLIENT.send_message(user_id, "<b>Process canceled!</b>")
+            
+            await client.sign_in(password=password.text)
+        
+        # Step 5: Save session
+        await client.disconnect()
+        await CLIENT.send_message(user_id, "<b>✅ Userbot added successfully!</b>\nYour session has been saved.")
+    
+    except asyncio.exceptions.TimeoutError:
+        await CLIENT.send_message(user_id, "<b>⏰ Timeout! Process automatically canceled.</b>")
+    except Exception as e:
+        await CLIENT.send_message(user_id, f"<b>❌ Error:</b> {str(e)}")
       
   elif type=="channels":
      buttons = []
